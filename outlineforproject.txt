@@ -1,17 +1,28 @@
 outline 
 
-INTRO: 
+INTRO - anuujin: 
   what is the story we're telling
   why it matters
 
-INTERACTIVE PAGES
-
-1) time x depression and cases
-  what is anxiety 
+INTERACTIVE PAGES: 
+1) time x depression and cases - anuujin:
+  what is depression 
   how is measured 
+  LINEPLOT
   
 
-2) time x anxiety and cases
+2) time x anxiety and cases - faiza: 
+  what is anxiety 
+  how is measured 
+  LINEPLOT
 
-3) time x depression AND anxiety and cases
+3) time x depression AND anxiety and cases: hafsah
+  scatter plot???
+  LINEPLOT W/ BOTH ANXIETY AND DEPRESSION ???
+  overall how did both factors change overtime 
 
+SUMMARY/ABOUT - faiza: 
+  takeaways from project
+  convey conclusions
+  names
+  data sources 
