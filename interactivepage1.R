@@ -1,4 +1,3 @@
-
 library(dplyr)
 library(stringr)
 library(ggplot2)
@@ -17,7 +16,17 @@ ui <- fluidPage(
   ),
   
   tabsetPanel(
-    tabPanel("Definitions", textOutput("definition")),
+    tabPanel("Depressive", 
+                      div(
+                        style = "text-align: center;",
+                        h1("Understanding Depression", style = "color: #3E92CC;"),
+  
+                        p("Depression is a mood disorder characterized by persistent feelings of sadness, hopelessness, and a lack of interest in daily activities. It can affect how you feel, think, and handle daily activities. Seeking help and support is important for managing depression.", style = "font-size: 18px;"),
+                        hr(),
+                        hr(),
+                        h1("How to Measure Depression", style = "color: #3E92CC;"),
+                        p("The Beck Depression Inventory (BDI) is widely used to screen for depression and to measure behavioral manifestations and severity of depression. The BDI can be used for ages 13 to 80. The inventory contains 21 self-report items which individuals complete using multiple choice response formats.", style = "font-size: 18px;")
+                      )),
     tabPanel("Average_Percentage_per_Condition", plotOutput("plot1")),
     tabPanel("Average_New_Cases", plotOutput("plot2")),
     tabPanel("Cumulative_Cases_EndOfMonth", plotOutput("plot3"))
@@ -31,13 +40,6 @@ server <- function(input, output) {
   
   observe({
     print(str(data))
-  })
-  
-  
-  
-  output$definition <- renderText({
-    "Depression is a mental disorder that involves a persistent feeling of loss of pleasure or interest in activities for long periods of time."
-    # You can modify this text to include more detailed information if needed.
   })
   
   filteredColumns <- reactive({
