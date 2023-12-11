@@ -19,15 +19,77 @@ library(tidyr)
 
 final_df <- read.csv("unified_and_cleaned_data.csv")
 
+# summary_df <- summarize(
+#   group_by(final_df, MonthYear),
+#   Average_Percentage_per_Condition = mean(Average_Percentage_per_Condition),
+#   Average_New_Cases = mean(Average_New_Cases),
+#   Cumulative_New_Cases = last(Cumulative_Cases_EndOfMonth)
+# )
+# Convert Date to MonthYear
+# final_df$MonthYear <- format(as.Date(final_df$Date), "%Y-%m")
+# 
+# # Pivot the DataFrame
+# condensed_df <- pivot_wider(
+#   data = final_df,
+#   id_cols = MonthYear,
+#   names_from = Indicator,
+#   values_from = c(Average_Percentage_per_Condition),
+#   names_sep = "_"
+# )
+# 
+# # Select specific columns from the original DataFrame
+# selected_columns <- select(final_df, MonthYear, Average_New_Cases, Cumulative_Cases_EndOfMonth)
+# 
+# # Convert MonthYear to character for consistent formatting
+# selected_columns <- mutate(selected_columns, MonthYear = as.character(MonthYear))
+# condensed_df <- mutate(condensed_df, MonthYear = as.character(MonthYear))
+# 
+# # Join the data frames based on the 'MonthYear' column
+# merged_df <- left_join(condensed_df, selected_columns, by = "MonthYear")
 
+# 
+#final_df$MonthYear <- format(as.Date(final_df$Date), "%Y-%m")
+
+# Pivot the DataFrame
+condensed_df <- pivot_wider(
+  data = final_df,
+  id_cols = MonthYear,
+  names_from = Indicator,
+  values_from = c(Average_Percentage_per_Condition),
+  names_sep = "_"
+)
+
+
+# # Select specific columns from the original DataFrame
+# selected_columns <- select(final_df, MonthYear, Average_New_Cases, Cumulative_Cases_EndOfMonth)
+# 
+# # Convert MonthYear to character for consistent formatting
+# selected_columns <- mutate(selected_columns, MonthYear = as.character(MonthYear))
+# condensed_df <- mutate(condensed_df, MonthYear = as.character(MonthYear))
+# 
+# # Join the data frames based on the 'MonthYear' column
+# merged_df <- left_join(condensed_df, selected_columns, by = "MonthYear")
+
+
+# condensed_df <- pivot_wider(
+#   data = final_df,
+#   id_cols = MonthYear,
+#   names_from = Indicator,
+#   values_from = c(Average_Percentage_per_Condition),
+#   names_sep = "_"
+# )
+
+# paste(condensed_df)
+
+write.csv(condensed_df, "test.csv", row.names = FALSE)
 ui <- fluidPage(
   titlePanel("COVID-19 and Mental Health Analysis"),
   p("test"),
-  sidebarLayout(
-    mainPanel(
-      plotOutput("plot")
-    )
-  )
+  # sidebarLayout(
+  #   mainPanel(
+  #     plotOutput("plot")
+  #   )
+  # )
 )
 
 # Shiny server
