@@ -65,8 +65,22 @@ ui <- fluidPage(
                         h1("How to Measure Depression", style = "color: #3E92CC;"),
                         p("The Beck Depression Inventory (BDI) is widely used to screen for depression and to measure behavioral manifestations and severity of depression. The BDI can be used for ages 13 to 80. The inventory contains 21 self-report items which individuals complete using multiple choice response formats.", style = "font-size: 18px;")
                       )),
-    tabPanel("Depression Levels Over Time", plotOutput("plot_depression")),
-    tabPanel("Average COVID-19 Cases Over Time", plotOutput("plot_cases")),
+    tabPanel("Depression Levels Over Time",
+             sliderInput("date_range_depression", "Select Date Range:",
+                         min = min(as.Date(paste0(data$MonthYear, "-01")), na.rm = TRUE),
+                         max = max(as.Date(paste0(data$MonthYear, "-01")), na.rm = TRUE),
+                         value = c(min(as.Date(paste0(data$MonthYear, "-01")), na.rm = TRUE),
+                                   max(as.Date(paste0(data$MonthYear, "-01")), na.rm = TRUE)),
+                         step = 1),
+             plotOutput("plot_depression")),
+    tabPanel("Average COVID-19 Cases Over Time",
+             sliderInput("date_range_cases", "Select Date Range:",
+                         min = min(as.Date(paste0(data$MonthYear, "-01")), na.rm = TRUE),
+                         max = max(as.Date(paste0(data$MonthYear, "-01")), na.rm = TRUE),
+                         value = c(min(as.Date(paste0(data$MonthYear, "-01")), na.rm = TRUE),
+                                   max(as.Date(paste0(data$MonthYear, "-01")), na.rm = TRUE)),
+                         step = 1),
+             plotOutput("plot_cases")),
   )
 )
 
@@ -74,15 +88,31 @@ ui <- fluidPage(
 # -------------------------------- SERVER ------------------------------------ #
 server <- function(input, output) {
   
+  filtered_data <- reactive({
+    date_range <- input$date_range_depression
+    filtered <- subset(final_data, as.Date(paste0(MonthYear, "-01")) >= date_range[1] &
+                         as.Date(paste0(MonthYear, "-01")) <= date_range[2])
+    return(filtered)
+  })
+  
+  filtered_data_cases <- reactive({
+    date_range <- input$date_range_cases
+    filtered <- subset(final_data, as.Date(paste0(MonthYear, "-01")) >= date_range[1] &
+                         as.Date(paste0(MonthYear, "-01")) <= date_range[2])
+    return(filtered)
+  })
+  
   output$plot_cases <- renderPlot({
-    ggplot(final_data, aes(x = MonthYear, y = Average_New_Cases_per_100, group = 1)) +
+    selected_data <- filtered_data_cases()
+    ggplot(selected_data, aes(x = MonthYear, y = Average_New_Cases_per_100, group = 1)) +
       geom_line() +
       labs(title = "Average New Cases per 100 Over Time", x = "MonthYear", y = "Average New Cases per 100") +
       theme_minimal()
   })
   
   output$plot_depression <- renderPlot({
-    ggplot(final_data, aes(x = MonthYear, y = Depression, group = 1)) +
+    selected_data <- filtered_data()
+    ggplot(selected_data, aes(x = MonthYear, y = Depression, group = 1)) +
       geom_line() +
       labs(title = "Depression vs. Time", x = "MonthYear", y = "Depression") +
       theme_minimal()
