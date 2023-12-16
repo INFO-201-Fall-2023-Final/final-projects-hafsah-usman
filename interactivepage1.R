@@ -7,16 +7,54 @@ library(shinythemes)
 
 data <- read.csv("unified_and_cleaned_data.csv")
 
+# ----------------------- MORE DATA MANIPULATION ----------------------------- #
+
+data <- filter(data, !str_detect(Indicator, "Symptoms of Anxiety Disorder or Depressive Disorder"))
+
+data <- mutate(data, row_number = row_number() %% 2)
+data <- group_by(data, MonthYear, row_number)
+
+processed_data <- summarise(data,
+                            Depression = ifelse(row_number == 0, sum(Average_Percentage_per_Condition), NA),
+                            Anxiety = ifelse(row_number == 1, sum(Average_Percentage_per_Condition), NA))
+
+processed_data <- ungroup(processed_data)
+
+final_data <- left_join(data, processed_data, by = c("MonthYear", "row_number"))
+for (i in seq(1, nrow(data), by = 2)) {
+  final_data$Depression[i] <- final_data$Depression[i + 1]
+}
+
+final_data <- final_data[!is.na(final_data$Anxiety), ]
+final_data <- select(final_data, -Average_Percentage_per_Condition)
+final_data <- final_data[, !names(final_data) %in% c("row_number")]
+final_data <- select(final_data, -Indicator)
+final_data <- select(final_data, -Cumulative_Cases_EndOfMonth)
+final_data <- select(final_data, -Anxiety)
+
+numeric_columns <- sapply(final_data, is.numeric)
+
+column_to_exclude <- "MonthYear"
+numeric_columns[column_to_exclude] <- FALSE
+
+final_data[, numeric_columns] <- round(final_data[, numeric_columns], 2)
+
+final_data$Average_New_Cases_per_100 <- final_data$Average_New_Cases / 1000
+final_data <- final_data[, !names(final_data) %in% c("Average_New_Cases")]
+names(final_data)[names(final_data) == "Average New_Cases (per_1000)"] <- "Average New_Cases (per_1000)"
+names(final_data)[names(final_data) == "Average New_Cases (per_1000)"] <- "Average New_Cases (per_1000)"
+final_data$Average_New_Cases_per_100 <- as.numeric(final_data$Average_New_Cases_per_100)
+
+# --------------------------- UI / FUID PAGE --------------------------------- #
 
 ui <- fluidPage(
   theme = shinytheme("darkly"),
   tags$div(class = "jumbotron text-center", style = "margin-bottom:0px;margin-top:0px",
            tags$h2(class = 'jumbotron-heading', stye = 'margin-bottom:0px;margin-top:0px', 'Interactive Page 1'),
-           p('Learn about the correlation between depression and COVID cases.')
   ),
   
   tabsetPanel(
-    tabPanel("Depressive", 
+    tabPanel("Depression", 
                       div(
                         style = "text-align: center;",
                         h1("Understanding Depression", style = "color: #3E92CC;"),
@@ -27,46 +65,27 @@ ui <- fluidPage(
                         h1("How to Measure Depression", style = "color: #3E92CC;"),
                         p("The Beck Depression Inventory (BDI) is widely used to screen for depression and to measure behavioral manifestations and severity of depression. The BDI can be used for ages 13 to 80. The inventory contains 21 self-report items which individuals complete using multiple choice response formats.", style = "font-size: 18px;")
                       )),
-    tabPanel("Average_Percentage_per_Condition", plotOutput("plot1")),
-    tabPanel("Average_New_Cases", plotOutput("plot2")),
-    tabPanel("Cumulative_Cases_EndOfMonth", plotOutput("plot3"))
+    tabPanel("Depression Levels Over Time", plotOutput("plot_depression")),
+    tabPanel("Average COVID-19 Cases Over Time", plotOutput("plot_cases")),
   )
 )
 
+
+# -------------------------------- SERVER ------------------------------------ #
 server <- function(input, output) {
   
-  data$Average_New_Cases <- as.numeric(as.character(data$Average_New_Cases))
-  data$Cumulative_Cases_EndOfMonth <- as.numeric(as.character(data$Cumulative_Cases_EndOfMonth))
-  
-  observe({
-    print(str(data))
-  })
-  
-  filteredColumns <- reactive({
-    columns <- data[, grepl("depressive", names(data))]
-    return(columns)
-  })
-
-  
-  output$plot1 <- renderPlot({
-    ggplot(data = data, aes_string(x = "MonthYear", y = "Average_Percentage_per_Condition")) +
+  output$plot_cases <- renderPlot({
+    ggplot(final_data, aes(x = MonthYear, y = Average_New_Cases_per_100, group = 1)) +
       geom_line() +
-      labs(title = "Time vs Average_Percentage_per_Condition for Depressive Indicators", x = "MonthYear", y = "Average_Percentage_per_Condition") +
-      theme_light()
+      labs(title = "Average New Cases per 100 Over Time", x = "MonthYear", y = "Average New Cases per 100") +
+      theme_minimal()
   })
   
-  output$plot2 <- renderPlot({
-    ggplot(data = data, aes_string(x = "MonthYear", y = "Average_New_Cases")) +
+  output$plot_depression <- renderPlot({
+    ggplot(final_data, aes(x = MonthYear, y = Depression, group = 1)) +
       geom_line() +
-      labs(title = "Time vs Average_New_Cases for Depressive Indicators", x = "MonthYear", y = "Average_New_Cases") +
-      theme_light()
-  })
-  
-  output$plot3 <- renderPlot({
-    ggplot(data = data, aes_string(x = "MonthYear", y = "Cumulative_Cases_EndOfMonth")) +
-      geom_line() +
-      labs(title = "Time vs Cumulative_Cases_EndOfMonth for Depressive Indicators", x = "MonthYear", y = "Cumulative_Cases_EndOfMonth") +
-      theme_light()
+      labs(title = "Depression vs. Time", x = "MonthYear", y = "Depression") +
+      theme_minimal()
   })
 }
 

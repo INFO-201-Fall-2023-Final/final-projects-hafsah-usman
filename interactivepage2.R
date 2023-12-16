@@ -8,12 +8,47 @@ library(reshape2)
 
 data <- read.csv("unified_and_cleaned_data.csv")
 
+# ----------------------- MORE DATA MANIPULATION ----------------------------- #
+data <- filter(data, !str_detect(Indicator, "Symptoms of Anxiety Disorder or Depressive Disorder"))
 
+data <- mutate(data, row_number = row_number() %% 2)
+data <- group_by(data, MonthYear, row_number)
+processed_data <- summarise(data,
+                            Depression = ifelse(row_number == 0, sum(Average_Percentage_per_Condition), NA),
+                            Anxiety = ifelse(row_number == 1, sum(Average_Percentage_per_Condition), NA))
+
+processed_data <- ungroup(processed_data)
+
+final_data <- left_join(data, processed_data, by = c("MonthYear", "row_number"))
+for (i in seq(1, nrow(data), by = 2)) {
+  final_data$Depression[i] <- final_data$Depression[i + 1]
+  
+}
+
+final_data <- final_data[!is.na(final_data$Anxiety), ]
+final_data <- select(final_data, -Average_Percentage_per_Condition)
+final_data <- final_data[, !names(final_data) %in% c("row_number")]
+final_data <- select(final_data, -Indicator)
+final_data <- select(final_data, -Cumulative_Cases_EndOfMonth)
+final_data <- select(final_data, -Depression)
+
+numeric_columns <- sapply(final_data, is.numeric)
+
+column_to_exclude <- "MonthYear"
+numeric_columns[column_to_exclude] <- FALSE
+
+final_data[, numeric_columns] <- round(final_data[, numeric_columns], 2)
+
+final_data$Average_New_Cases_per_100 <- final_data$Average_New_Cases / 1000
+final_data <- final_data[, !names(final_data) %in% c("Average_New_Cases")]
+names(final_data)[names(final_data) == "Average New_Cases (per_1000)"] <- "Average New_Cases (per_1000)"
+
+# --------------------------- UI / FUID PAGE --------------------------------- #
 ui <- fluidPage(
   theme = shinytheme("darkly"),
   tags$div(class = "jumbotron text-center", style = "margin-bottom:0px;margin-top:0px",
-           tags$h2(class = 'jumbotron-heading', stye = 'margin-bottom:0px;margin-top:0px', 'Interactive Page 1'),
-           p('Learn about the correlation between Anxiety and COVID cases.')
+           tags$h2(class = 'jumbotron-heading', stye = 'margin-bottom:0px;margin-top:0px', 'COVID-19 and Anxiety Analysis'),
+           p('Learn about the correlation between Anxiety and COVID-19 cases.')
   ),
   
   tabsetPanel(
@@ -37,53 +72,28 @@ ui <- fluidPage(
                hr(),
                hr(),
              )),
-    tabPanel("Average Percentage of Anxiety Over Time", plotOutput("line_plot")),
-    #tabPanel("Average_New_Cases", plotOutput("plot2")),
+    tabPanel("Anxiety Levels Over Time", plotOutput("plot_anxiety")),
+    tabPanel("Average COVID-19 Cases Over Time", plotOutput("plot_cases")),
   )
 )
 
-ui <- fluidPage(
-  titlePanel("Anxiety and Time"),
-  tabsetPanel(
-    tabPanel("About Anxiety ", 
-             ui
-    ),
-    tabPanel("How is it Measured",
-             #plotOutput("line_plot")
-    )
-  )
-)
-
+# -------------------------------- SERVER ------------------------------------ #
 server <- function(input, output) {
-  print(str(data))
-  print(colnames(data))
   
-  #### line_plot_data <- filter(data, Indicator == "Symptoms of Anxiety Disorder")
-  # Reshape the data for plotting
-  melted_df <- melt(data, id.vars = c("Date", "Indicator"), measure.vars = c("Symptoms_of_Anxiety_Disorder", "Average_New_Cases"))
-  
-  # Shiny plot
-  output$plot <- renderPlot({
-    ggplot(melted_df, aes(x = Date, y = value, color = variable)) +
+  output$plot_cases <- renderPlot({
+    ggplot(final_data, aes(x = MonthYear, y = Average_New_Cases_per_100, group = 1)) +
       geom_line() +
-      labs(title = "Change in Cases Over Time",
-           x = "Date",
-           y = "Value",
-           color = "Variable") +
+      labs(title = "Average New Cases per 100 Over Time", x = "MonthYear", y = "Average New Cases per 100") +
       theme_minimal()
   })
-  # line_plot_data$Date <- as.Date(paste0(line_plot_data$MonthYear, "-01"))
-  # 
-  # print(colnames(line_plot_data))
-  # str(line_plot_data)
-  # 
-  # output$line_plot <- renderPlot({
-  #   ggplot(line_plot_data, aes(x = Date, y = Average_New_Cases, group = 1)) +
-  #     geom_line() +
-  #     labs(title = "Change in Cases of Anxiety and COVID-19 Over Time",
-  #          x = "Date",
-  #          y = "Average New Cases")
-  # })
+  
+  output$plot_anxiety <- renderPlot({
+    ggplot(final_data, aes(x = MonthYear, y = Anxiety, group = 1)) +
+      geom_line() +
+      labs(title = "Anxiety vs. Time", x = "MonthYear", y = "Anxiety") +
+      theme_minimal()
+  })
+  
 }
 
 shinyApp(ui = ui, server = server)
