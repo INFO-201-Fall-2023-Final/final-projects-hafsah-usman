@@ -50,7 +50,7 @@ final_data$Average_New_Cases_per_100 <- as.numeric(final_data$Average_New_Cases_
 ui <- fluidPage(
   theme = shinytheme("darkly"),
   tags$div(class = "jumbotron text-center", style = "margin-bottom:0px;margin-top:0px",
-           tags$h2(class = 'jumbotron-heading', stye = 'margin-bottom:0px;margin-top:0px', 'Interactive Page 1'),
+           tags$h2(class = 'jumbotron-heading', stye = 'margin-bottom:0px;margin-top:0px', 'COVID-19 and Depression Analysis'),
   ),
   
   tabsetPanel(
